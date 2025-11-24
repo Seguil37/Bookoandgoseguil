@@ -66,7 +66,14 @@ class PaymentController extends Controller
                 'confirmed_at' => now(),
             ]);
 
-            Mail::to($user->email)->send(new PaymentConfirmedMail($payment));
+            if (!$payment->user_id && $payment->booking && $payment->booking->user_id) {
+                $payment->update(['user_id' => $payment->booking->user_id]);
+            }
+
+            $payment->load('user');
+            if ($payment->user && $payment->user->email) {
+                Mail::to($payment->user->email)->send(new PaymentConfirmedMail($payment));
+            }
 
             DB::commit();
 
@@ -110,10 +117,13 @@ class PaymentController extends Controller
                 'confirmed_at' => now(),
             ]);
 
-            $user = $payment->user ?? $payment->booking->user;
+            if (!$payment->user_id && $payment->booking && $payment->booking->user_id) {
+                $payment->update(['user_id' => $payment->booking->user_id]);
+            }
 
-            if ($user) {
-                Mail::to($user->email)->send(new PaymentConfirmedMail($payment));
+            $payment->load('user');
+            if ($payment->user && $payment->user->email) {
+                Mail::to($payment->user->email)->send(new PaymentConfirmedMail($payment));
             }
 
             DB::commit();
