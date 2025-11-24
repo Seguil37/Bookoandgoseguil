@@ -11,6 +11,7 @@ const RegisterPage = () => {
   const navigate = useNavigate();
 
   const [step, setStep] = useState(1);
+  const { register, clearError } = useAuthStore();
   const [formData, setFormData] = useState({
     name: '',
     email: '',
@@ -91,10 +92,11 @@ const RegisterPage = () => {
   };
 
   const handleSubmit = async (e) => {
-    e.preventDefault();
-    
-    const { register, loading, error, clearError } = useAuthStore();
-    
+
+    if (e) {
+      e.preventDefault();
+    }
+
     clearError();
 
     // Enviar datos al backend
