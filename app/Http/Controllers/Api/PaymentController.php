@@ -3,10 +3,12 @@
 namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
+use App\Mail\PaymentConfirmedMail;
 use App\Models\Payment;
 use App\Models\Booking;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Mail;
 
 class PaymentController extends Controller
 {
@@ -64,6 +66,8 @@ class PaymentController extends Controller
                 'confirmed_at' => now(),
             ]);
 
+            Mail::to($user->email)->send(new PaymentConfirmedMail($payment));
+
             DB::commit();
 
             return response()->json([
@@ -105,6 +109,12 @@ class PaymentController extends Controller
                 'status' => 'confirmed',
                 'confirmed_at' => now(),
             ]);
+
+            $user = $payment->user ?? $payment->booking->user;
+
+            if ($user) {
+                Mail::to($user->email)->send(new PaymentConfirmedMail($payment));
+            }
 
             DB::commit();
 
