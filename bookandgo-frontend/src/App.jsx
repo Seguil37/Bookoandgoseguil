@@ -20,6 +20,7 @@ import BookingPage from './features/booking/pages/BookingPage';
 import CheckoutPage from './features/booking/pages/CheckoutPage';
 import BookingSuccessPage from './features/booking/pages/BookingSuccessPage';
 import MyBookingsPage from './features/customer/pages/MyBookingsPage';
+import FavoritesPage from './features/customer/pages/FavoritesPage';
 
 // Agency Pages
 import AgencyDashboard from './features/agency/pages/AgencyDashboard';
@@ -151,13 +152,21 @@ function App() {
               } 
             />
 
-            <Route 
-              path="profile/bookings" 
+            <Route
+              path="profile/bookings"
               element={
                 <ProtectedRoute allowedRoles={['customer']}>
                   <MyBookingsPage />
                 </ProtectedRoute>
-              } 
+              }
+            />
+            <Route
+              path="favorites"
+              element={
+                <ProtectedRoute allowedRoles={['customer']}>
+                  <FavoritesPage />
+                </ProtectedRoute>
+              }
             />
           </Route>
         </Routes>
