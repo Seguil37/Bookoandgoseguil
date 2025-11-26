@@ -1,14 +1,15 @@
 // src/features/tours/components/TourCard.jsx
 
-import { useEffect, useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useRef, useState } from 'react';
+import { Link } from 'react-router-dom';
 import { Star, MapPin, Clock, Users, Heart } from 'lucide-react';
 import useAuthStore from '../../../store/authStore';
 import useFavoriteStore from '../../../store/favoriteStore';
 
 const TourCard = ({ tour }) => {
   const [isFavorite, setIsFavorite] = useState(false);
-  const navigate = useNavigate();
+  const [favoriteMessage, setFavoriteMessage] = useState('');
+  const messageTimerRef = useRef(null);
   const { isAuthenticated, user } = useAuthStore();
   const { favorites, fetchFavorites, toggleFavorite } = useFavoriteStore();
 
@@ -22,21 +23,36 @@ const TourCard = ({ tour }) => {
     setIsFavorite(favorites.includes(tour.id));
   }, [favorites, tour.id]);
 
+  useEffect(() => {
+    if (!favoriteMessage) return undefined;
+
+    const timer = setTimeout(() => setFavoriteMessage(''), 3000);
+    messageTimerRef.current = timer;
+
+    return () => {
+      if (messageTimerRef.current) {
+        clearTimeout(messageTimerRef.current);
+      }
+    };
+  }, [favoriteMessage]);
+
   const handleToggleFavorite = async (e) => {
     e.preventDefault();
 
     if (!isAuthenticated || user?.role !== 'customer') {
-      window.alert('Debes iniciar sesión como cliente para usar favoritos.');
-      navigate('/login');
+      setFavoriteMessage('Debes iniciar sesión como cliente para usar favoritos.');
       return;
     }
 
     try {
-      await toggleFavorite(tour.id);
+      const response = await toggleFavorite(tour.id);
+      const nowFavorite = response?.is_favorite ?? !isFavorite;
+      setFavoriteMessage(
+        nowFavorite ? 'Tour guardado en favoritos.' : 'Tour eliminado de favoritos.'
+      );
     } catch (error) {
       if (error.message === 'AUTH_REQUIRED') {
-        window.alert('Inicia sesión para guardar tus favoritos.');
-        navigate('/login');
+        setFavoriteMessage('Inicia sesión para guardar tus favoritos.');
       }
     }
   };
@@ -66,6 +82,7 @@ const TourCard = ({ tour }) => {
         {/* Botón de favoritos */}
         <button
           className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors cursor-pointer"
+          type="button"
           onClick={handleToggleFavorite}
           aria-label={isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}
         >
@@ -73,6 +90,12 @@ const TourCard = ({ tour }) => {
             className={`w-4 h-4 ${isFavorite ? 'text-red-500 fill-current' : 'text-gray-600'}`}
           />
         </button>
+
+        {favoriteMessage && (
+          <div className="absolute top-14 right-4 bg-white/95 text-gray-800 text-xs px-3 py-2 rounded-lg shadow-lg border border-gray-200 max-w-[220px]">
+            {favoriteMessage}
+          </div>
+        )}
 
         {/* Badge de descuento */}
         {tour.discount_price && (

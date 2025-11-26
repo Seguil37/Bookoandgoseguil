@@ -29,6 +29,7 @@ const TourDetailPage = () => {
   const [reviewForm, setReviewForm] = useState({ rating: 0, comment: '' });
   const [submittingReview, setSubmittingReview] = useState(false);
   const [existingReview, setExistingReview] = useState(null);
+  const [actionNotice, setActionNotice] = useState(null);
 
   useEffect(() => {
     fetchTour();
@@ -59,6 +60,13 @@ const TourDetailPage = () => {
       }
     }
   }, [isAuthenticated, reviews, user]);
+
+  useEffect(() => {
+    if (!actionNotice) return undefined;
+
+    const timer = setTimeout(() => setActionNotice(null), 4000);
+    return () => clearTimeout(timer);
+  }, [actionNotice]);
 
   const fetchTour = async () => {
     try {
@@ -137,18 +145,36 @@ const TourDetailPage = () => {
     if (!tour) return;
 
     if (!isAuthenticated || user?.role !== 'customer') {
-      window.alert('Debes iniciar sesión como cliente para usar favoritos.');
-      navigate('/login');
+      setActionNotice({
+        type: 'warning',
+        message: 'Debes iniciar sesión como cliente para usar favoritos.'
+      });
       return;
     }
 
     try {
-      await toggleFavorite(tour.id);
+      const response = await toggleFavorite(tour.id);
+      const nowFavorite = response?.is_favorite ?? !isFavorite;
+
+      setActionNotice({
+        type: 'success',
+        message: nowFavorite
+          ? 'Tour guardado en favoritos.'
+          : 'Tour eliminado de tus favoritos.'
+      });
     } catch (error) {
       if (error.message === 'AUTH_REQUIRED') {
-        window.alert('Inicia sesión para guardar tus favoritos.');
-        navigate('/login');
+        setActionNotice({
+          type: 'warning',
+          message: 'Inicia sesión para guardar tus favoritos.'
+        });
+        return;
       }
+
+      setActionNotice({
+        type: 'error',
+        message: 'No se pudo actualizar el favorito. Inténtalo de nuevo.'
+      });
     }
   };
 
@@ -156,8 +182,10 @@ const TourDetailPage = () => {
     e.preventDefault();
 
     if (!isAuthenticated || user?.role !== 'customer') {
-      window.alert('Debes iniciar sesión como cliente para dejar una reseña.');
-      navigate('/login');
+      setActionNotice({
+        type: 'warning',
+        message: 'Debes iniciar sesión como cliente para dejar una reseña.'
+      });
       return;
     }
 
@@ -178,7 +206,10 @@ const TourDetailPage = () => {
 
       await fetchReviews();
       await fetchTour();
-      window.alert('Tu reseña se ha guardado.');
+      setActionNotice({
+        type: 'success',
+        message: 'Tu reseña se ha guardado exitosamente.'
+      });
     } catch (err) {
       setReviewError(err.response?.data?.message || 'No se pudo guardar la reseña');
     } finally {
@@ -228,6 +259,52 @@ const TourDetailPage = () => {
           <span className="mx-2">/</span>
           <span className="text-gray-900 font-medium truncate max-w-xs sm:max-w-md">{tour.title}</span>
         </div>
+
+        {actionNotice && (
+          <div
+            className={`mb-6 p-4 rounded-xl border flex items-start gap-3 shadow-sm ${
+              actionNotice.type === 'success'
+                ? 'bg-green-50 border-green-200 text-green-800'
+                : actionNotice.type === 'warning'
+                  ? 'bg-amber-50 border-amber-200 text-amber-800'
+                  : 'bg-red-50 border-red-200 text-red-800'
+            }`}
+          >
+            <div
+              className={`p-2 rounded-full ${
+                actionNotice.type === 'success'
+                  ? 'bg-green-100'
+                  : actionNotice.type === 'warning'
+                    ? 'bg-amber-100'
+                    : 'bg-red-100'
+              }`}
+            >
+              {actionNotice.type === 'success' && <Check className="w-5 h-5" />}
+              {actionNotice.type === 'warning' && <Info className="w-5 h-5" />}
+              {actionNotice.type === 'error' && <X className="w-5 h-5" />}
+            </div>
+
+            <div className="flex-1">
+              <p className="font-semibold text-sm mb-1">
+                {actionNotice.type === 'success'
+                  ? 'Acción completada'
+                  : actionNotice.type === 'warning'
+                    ? 'Atención necesaria'
+                    : 'Ocurrió un problema'}
+              </p>
+              <p className="text-sm leading-relaxed">{actionNotice.message}</p>
+            </div>
+
+            <button
+              type="button"
+              onClick={() => setActionNotice(null)}
+              className="p-1 rounded-lg hover:bg-white/60 transition-colors"
+              aria-label="Cerrar notificación"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        )}
 
         <div className="bg-white rounded-2xl shadow-xl overflow-hidden animate-fade-in">
           <div className="p-6 md:p-8">
@@ -397,6 +474,7 @@ const TourDetailPage = () => {
                     {['description', 'itinerary', 'includes', 'excludes', 'requirements'].map((tab) => (
                       <button
                         key={tab}
+                        type="button"
                         className={`px-4 py-3 font-medium text-sm whitespace-nowrap transition-all ${
                           activeTab === tab
                             ? 'text-yellow-600 border-b-2 border-yellow-500 bg-yellow-50'
