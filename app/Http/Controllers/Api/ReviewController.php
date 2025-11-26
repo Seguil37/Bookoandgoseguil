@@ -6,6 +6,7 @@ namespace App\Http\Controllers\Api;
 use App\Http\Controllers\Controller;
 use App\Models\Review;
 use App\Models\Booking;
+use App\Models\Tour;
 use Illuminate\Http\Request;
 
 class ReviewController extends Controller
@@ -31,7 +32,7 @@ class ReviewController extends Controller
     {
         $validated = $request->validate([
             'tour_id' => 'required|exists:tours,id',
-            'booking_id' => 'required|exists:bookings,id',
+            'booking_id' => 'nullable|exists:bookings,id',
             'rating' => 'required|integer|min:1|max:5',
             'title' => 'nullable|string|max:255',
             'comment' => 'required|string|min:10|max:1000',
@@ -43,22 +44,18 @@ class ReviewController extends Controller
         ]);
 
         $user = $request->user();
-        $booking = Booking::findOrFail($validated['booking_id']);
+        $tour = Tour::findOrFail($validated['tour_id']);
+        $booking = null;
 
-        // Verificar que el usuario hizo la reserva
-        if ($booking->user_id !== $user->id) {
-            return response()->json([
-                'message' => 'No tienes permiso para reseñar este tour'
-            ], 403);
-        }
+        if (!empty($validated['booking_id'])) {
+            $booking = Booking::findOrFail($validated['booking_id']);
 
-        // Verificar que no haya reseñado antes
-        if (Review::where('user_id', $user->id)
-                  ->where('tour_id', $validated['tour_id'])
-                  ->exists()) {
-            return response()->json([
-                'message' => 'Ya has dejado una reseña para este tour'
-            ], 422);
+            // Verificar que el usuario hizo la reserva
+            if ($booking->user_id !== $user->id) {
+                return response()->json([
+                    'message' => 'No tienes permiso para reseñar este tour'
+                ], 403);
+            }
         }
 
         // Subir imágenes
@@ -70,29 +67,51 @@ class ReviewController extends Controller
             }
         }
 
-        $review = Review::create([
+        $existingReview = Review::withTrashed()
+            ->where('user_id', $user->id)
+            ->where('tour_id', $validated['tour_id'])
+            ->first();
+
+        $payload = [
             'user_id' => $user->id,
             'tour_id' => $validated['tour_id'],
-            'booking_id' => $validated['booking_id'],
-            'agency_id' => $booking->agency_id,
+            'booking_id' => $validated['booking_id'] ?? null,
+            'agency_id' => $booking?->agency_id ?? $tour->agency_id,
             'rating' => $validated['rating'],
             'title' => $validated['title'] ?? null,
             'comment' => $validated['comment'],
             'service_rating' => $validated['service_rating'] ?? null,
             'value_rating' => $validated['value_rating'] ?? null,
             'guide_rating' => $validated['guide_rating'] ?? null,
-            'images' => !empty($imageUrls) ? $imageUrls : null,
-            'is_verified' => $booking->status === 'completed',
-        ]);
+            'images' => !empty($imageUrls) ? $imageUrls : ($existingReview?->images ?? null),
+            'is_verified' => $booking?->status === 'completed',
+            'is_approved' => true,
+        ];
 
-        // Actualizar rating del tour
+        if ($existingReview) {
+            if ($existingReview->trashed()) {
+                $existingReview->restore();
+            }
+
+            $existingReview->update($payload);
+            $review = $existingReview;
+            $message = 'Reseña actualizada exitosamente';
+        } else {
+            $payload['agency_id'] = $payload['agency_id'] ?? optional($booking)->agency_id;
+            $review = Review::create($payload);
+            $message = 'Reseña creada exitosamente';
+        }
+
+        // Actualizar rating del tour y la agencia
         $review->tour->updateRating();
-        $review->agency->updateRating();
+        if ($review->agency) {
+            $review->agency->updateRating();
+        }
 
         return response()->json([
-            'message' => 'Reseña creada exitosamente',
+            'message' => $message,
             'review' => $review->load('user')
-        ], 201);
+        ], $existingReview ? 200 : 201);
     }
 
     public function markHelpful($id)

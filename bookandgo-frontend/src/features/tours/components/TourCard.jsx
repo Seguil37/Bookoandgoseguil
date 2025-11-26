@@ -1,24 +1,44 @@
 // src/features/tours/components/TourCard.jsx
 
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom'; 
+import { useEffect, useState } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Star, MapPin, Clock, Users, Heart } from 'lucide-react';
 import useAuthStore from '../../../store/authStore';
+import useFavoriteStore from '../../../store/favoriteStore';
 
 const TourCard = ({ tour }) => {
   const [isFavorite, setIsFavorite] = useState(false);
   const navigate = useNavigate();
-  const { isAuthenticated } = useAuthStore();
+  const { isAuthenticated, user } = useAuthStore();
+  const { favorites, fetchFavorites, toggleFavorite } = useFavoriteStore();
 
-  const toggleFavorite = (e) => {
+  useEffect(() => {
+    if (isAuthenticated && favorites.length === 0) {
+      fetchFavorites();
+    }
+  }, [fetchFavorites, favorites.length, isAuthenticated]);
+
+  useEffect(() => {
+    setIsFavorite(favorites.includes(tour.id));
+  }, [favorites, tour.id]);
+
+  const handleToggleFavorite = async (e) => {
     e.preventDefault();
 
-    if (!isAuthenticated) {
+    if (!isAuthenticated || user?.role !== 'customer') {
+      window.alert('Debes iniciar sesión como cliente para usar favoritos.');
       navigate('/login');
       return;
     }
 
-    setIsFavorite(!isFavorite);
+    try {
+      await toggleFavorite(tour.id);
+    } catch (error) {
+      if (error.message === 'AUTH_REQUIRED') {
+        window.alert('Inicia sesión para guardar tus favoritos.');
+        navigate('/login');
+      }
+    }
   };
 
   return (
@@ -31,28 +51,29 @@ const TourCard = ({ tour }) => {
         <img
           src={tour.featured_image}
           alt={tour.title}
-          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500"
+          className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500 cursor-pointer"
           onError={(e) => {
             e.target.src = 'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?w=800';
           }}
         />
         <div className="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent"></div>
-        
+
         {/* Badge de categoría */}
         <div className="absolute top-4 left-4 bg-yellow-500 text-gray-900 px-3 py-1 rounded-full text-xs font-bold">
           {tour.category?.name || 'Aventura'}
         </div>
-        
+
         {/* Botón de favoritos */}
         <button
-          className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors"
-          onClick={toggleFavorite}
+          className="absolute top-4 right-4 bg-white/90 backdrop-blur-sm p-2 rounded-full hover:bg-white transition-colors cursor-pointer"
+          onClick={handleToggleFavorite}
+          aria-label={isFavorite ? 'Quitar de favoritos' : 'Guardar en favoritos'}
         >
           <Heart
             className={`w-4 h-4 ${isFavorite ? 'text-red-500 fill-current' : 'text-gray-600'}`}
           />
         </button>
-        
+
         {/* Badge de descuento */}
         {tour.discount_price && (
           <div className="absolute bottom-4 left-4 bg-red-500 text-white px-3 py-1 rounded-full text-xs font-bold">
@@ -123,7 +144,7 @@ const TourCard = ({ tour }) => {
             </div>
             <span className="text-xs text-gray-500">por persona</span>
           </div>
-          <button className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-4 rounded-lg transition-colors text-sm">
+          <button className="bg-yellow-500 hover:bg-yellow-600 text-gray-900 font-bold py-2 px-4 rounded-lg transition-colors text-sm cursor-pointer">
             Ver más
           </button>
         </div>
