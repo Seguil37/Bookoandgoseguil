@@ -5,6 +5,9 @@ import { useEffect } from 'react';
 import useAuthStore from './store/authStore';
 import './App.css';
 
+// Utils
+import ScrollToTop from './shared/components/ScrollToTop';
+
 // Layouts
 import MainLayout from './shared/components/Layout/MainLayout';
 
@@ -64,6 +67,7 @@ function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
+        <ScrollToTop />
         <Routes>
           <Route path="/" element={<MainLayout />}>
             {/* Public Routes */}
