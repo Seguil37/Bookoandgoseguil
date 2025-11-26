@@ -149,6 +149,7 @@ const EditTourPage = () => {
             {tabs.map((tab) => (
               <button
                 key={tab.id}
+                type="button"
                 onClick={() => setActiveTab(tab.id)}
                 className={`px-4 py-2 font-semibold transition-all border-b-2 ${
                   activeTab === tab.id

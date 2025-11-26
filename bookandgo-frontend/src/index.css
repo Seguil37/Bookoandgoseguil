@@ -3,7 +3,15 @@
 @layer base {
   body {
     @apply font-sans bg-white text-gray-900;
-    
+
+  }
+
+  button,
+  [role="button"],
+  input[type="button"],
+  input[type="submit"],
+  input[type="reset"] {
+    @apply cursor-pointer;
   }
   
 
