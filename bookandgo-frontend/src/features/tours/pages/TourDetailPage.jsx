@@ -34,7 +34,6 @@ const TourDetailPage = () => {
   useEffect(() => {
     fetchTour();
     fetchReviews();
-    window.scrollTo(0, 0);
   }, [id]);
 
   useEffect(() => {
