@@ -24,6 +24,7 @@ import CheckoutPage from './features/booking/pages/CheckoutPage';
 import BookingSuccessPage from './features/booking/pages/BookingSuccessPage';
 import MyBookingsPage from './features/customer/pages/MyBookingsPage';
 import FavoritesPage from './features/customer/pages/FavoritesPage';
+import ContactPage from './features/contact/pages/ContactPage';
 
 // Agency Pages
 import AgencyDashboard from './features/agency/pages/AgencyDashboard';
@@ -77,6 +78,7 @@ function App() {
             <Route path="login" element={<LoginPage />} />
             <Route path="register" element={<RegisterPage />} />
             <Route path="cart" element={<CartPage />} />
+            <Route path="contacto" element={<ContactPage />} />
 
             {/* Customer Routes */}
             <Route
