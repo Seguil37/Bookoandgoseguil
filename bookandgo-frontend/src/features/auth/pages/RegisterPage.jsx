@@ -1,7 +1,7 @@
 // src/features/auth/pages/RegisterPage.jsx
 
-import { useState } from 'react';
-import { Link, useNavigate } from 'react-router-dom';
+import { useEffect, useState } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
 import {
   UserPlus, Mail, Lock, User, Phone, Eye, EyeOff,
   Loader2, AlertCircle, Shield, Building2, UserCircle
@@ -10,6 +10,7 @@ import useAuthStore from '../../../store/authStore';
 
 const RegisterPage = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { register: registerUser, loading, error, clearError } = useAuthStore();
 
   const [step, setStep] = useState(0); // 0: selector, 1: formulario, 2: términos
@@ -33,6 +34,17 @@ const RegisterPage = () => {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [errors, setErrors] = useState({});
   const [focusedField, setFocusedField] = useState('');
+
+  useEffect(() => {
+    const params = new URLSearchParams(location.search);
+    const role = params.get('role');
+
+    if (role === 'agency') {
+      setUserType('agency');
+      setFormData((prev) => ({ ...prev, role: 'agency' }));
+      setStep(1);
+    }
+  }, [location.search]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });

@@ -62,16 +62,21 @@ const Header = () => {
           <div className="flex items-center gap-4 ml-6">
             {/* Contacto */}
             <div className="hidden xl:flex items-center gap-4 text-sm">
-              <a href="mailto:info@bookandgo.com" className="flex items-center gap-1 text-gray-600 hover:text-yellow-500 transition-colors">
+              <Link
+                to="/contacto"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-1 text-gray-600 hover:text-yellow-500 transition-colors"
+              >
                 <Mail className="w-4 h-4" />
                 <span className="hidden lg:inline">Contactanos</span>
-              </a>
+              </Link>
             </div>
 
             {/* Hazte Proveedor */}
             {!isAuthenticated || user?.role === 'customer' ? (
               <Link
-                to="/become-agency"
+                to="/register?role=agency"
                 className="hidden md:block text-gray-700 hover:text-yellow-500 font-semibold transition-colors"
               >
                 Hazte Proveedor
@@ -191,17 +196,23 @@ const Header = () => {
         {mobileMenuOpen && (
           <div className="lg:hidden pb-4 animate-fade-in">
             <div className="flex flex-col gap-2">
-              <a href="tel:+51987654321" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 rounded-lg">
+              <a href="tel:+51990179027" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 rounded-lg">
                 <Phone className="w-4 h-4 text-yellow-500" />
-                <span>+51 987 654 321</span>
+                <span>+51 990 179 027</span>
               </a>
-              <a href="mailto:info@bookandgo.com" className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 rounded-lg">
+              <Link
+                to="/contacto"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="flex items-center gap-2 px-4 py-2 hover:bg-gray-50 rounded-lg"
+                onClick={() => setMobileMenuOpen(false)}
+              >
                 <Mail className="w-4 h-4 text-yellow-500" />
-                <span>Contacto</span>
-              </a>
+                <span>Contactanos</span>
+              </Link>
               {!isAuthenticated && (
                 <Link
-                  to="/become-agency"
+                  to="/register?role=agency"
                   className="px-4 py-2 hover:bg-gray-50 rounded-lg"
                   onClick={() => setMobileMenuOpen(false)}
                 >
